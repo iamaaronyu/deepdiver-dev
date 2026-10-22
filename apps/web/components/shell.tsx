@@ -1,0 +1,16 @@
+'use client';
+import {createContext,useContext,useEffect,useState,ReactNode} from 'react';
+import {usePathname} from 'next/navigation';
+import {api,Health,statusNames} from '@/lib/api';
+
+const HealthContext=createContext<{health:Health|null;error:boolean}>({health:null,error:false});
+export function useHealth(){return useContext(HealthContext);}
+export function Badge({status}:{status:string}) {const tone=['COMPLETED','SUPPORTED','FETCHED'].includes(status)?'good':['FAILED','CONTRADICTED'].includes(status)?'bad':['PARTIALLY_SUPPORTED','OUTDATED_RISK','BUDGET_EXCEEDED','TIMED_OUT'].includes(status)?'warn':['CREATED','CANCELLED','UNVERIFIED','DUPLICATE_URL','DUPLICATE_CONTENT'].includes(status)?'neutral':'active';return <span className={'badge '+tone}><i/>{statusNames[status]||status}</span>;}
+export function Arrow(){return <span aria-hidden="true">↗</span>;}
+export function Empty({title,children}:{title:string;children?:ReactNode}) {return <div className="empty"><span className="empty-icon" aria-hidden="true">⌕</span><h3>{title}</h3>{children&&<p>{children}</p>}</div>;}
+export default function Shell({children}:{children:ReactNode}) {
+ const pathname=usePathname();const[health,setHealth]=useState<Health|null>(null);const[error,setError]=useState(false);
+ useEffect(()=>{let alive=true;const load=()=>api<Health>('/api/health').then(data=>{if(alive){setHealth(data);setError(false);}}).catch(()=>{if(alive)setError(true);});load();const interval=setInterval(load,10000);return()=>{alive=false;clearInterval(interval);};},[]);
+ const ready=!!health?.model_configured&&!!health?.search_configured&&!!health?.worker_running&&!error;
+ return <HealthContext.Provider value={{health,error}}><div className="app-shell"><aside className="sidebar"><a href="/" className="brand" aria-label="DeepDive 工作台"><span className="brand-mark" aria-hidden="true"><svg viewBox="0 0 30 30"><path d="M6 6h9a9 9 0 0 1 0 18H6z"/><path d="M11 11h4a4 4 0 0 1 0 8h-4z"/></svg></span><span>DeepDive<small>RESEARCH INTELLIGENCE</small></span></a><div className="nav-label">工作空间</div><nav><a className={pathname==='/'?'selected':''} href="/"><span aria-hidden="true">⊞</span><b>研究工作台</b></a><a className={pathname?.startsWith('/history')?'selected':''} href="/history/"><span aria-hidden="true">◷</span><b>研究记录</b></a></nav><div className="sidebar-note"><span className="note-icon">◎</span><strong>研究的价值，在于判断</strong><p>理解事实与分歧，<br/>让每个判断有据可循。</p></div><div className="local-note"><i/><span>研究记录保存在本机</span></div></aside><main className="workspace"><header className="topbar"><span>研究工作空间 <span className="topbar-slash">/</span> <strong>{pathname?.startsWith('/task')?'任务详情':pathname?.startsWith('/history')?'研究记录':'工作台'}</strong></span><span className={'service '+(ready?'online':'')}><i/>{ready?'研究服务在线':error?'无法连接服务':health?'研究服务未就绪':'正在检查连接'}</span></header><div className="page-content">{health&&!ready&&!error&&<div className="notice warn-notice" role="status">{!health.model_configured||!health.search_configured?'请先在本地完成模型与搜索配置，再开始研究。':'研究执行服务未启动，请运行本地启动命令后再试。'}</div>}{error&&<div className="notice error-notice" role="alert">暂时无法连接本地服务。已有研究记录会在连接恢复后重新加载。</div>}{children}</div><footer className="footer"><span>DeepDive · 证据驱动研究</span><span>研究结果请结合原始来源审阅</span></footer></main></div></HealthContext.Provider>;
+}

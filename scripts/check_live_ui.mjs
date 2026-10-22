@@ -1,0 +1,60 @@
+// Explicit real browser acceptance: creates one paid bounded research and one queued cancellation.
+import assert from 'node:assert/strict';
+import {mkdir,writeFile} from 'node:fs/promises';
+import {chromium} from '@playwright/test';
+const folder='data/ui-live';await mkdir(folder,{recursive:true});
+const browser=await chromium.launch({channel:'chrome',headless:true});
+const question='What is Python asyncio and what kinds of applications use it? Prefer official documentation.';
+const terminal=new Set(['COMPLETED','FAILED','CANCELLED','TIMED_OUT','BUDGET_EXCEEDED']);
+try{
+ const context=await browser.newContext({viewport:{width:1440,height:1000},acceptDownloads:true});
+ const page=await context.newPage();let sse=false;const browserErrors=[];
+ page.on('pageerror',error=>browserErrors.push(error.message));
+ page.on('response',response=>{if(response.url().endsWith('/events')&&response.status()===200&&response.headers()['content-type']?.includes('text/event-stream'))sse=true;});
+ const get=async path=>{const response=await context.request.get('http://127.0.0.1:8000'+path);assert(response.ok());return response.json();};
+ await page.goto('http://127.0.0.1:8000/');
+ await page.getByText('研究服务在线',{exact:true}).waitFor();
+ await page.getByLabel('研究问题',{exact:true}).fill(question);
+ await page.locator('summary').click();
+ await page.getByLabel('研究轮数',{exact:true}).selectOption('1');
+ await page.getByLabel('最长时间（秒）',{exact:true}).fill('180');
+ await page.getByLabel('搜索次数上限',{exact:true}).fill('6');
+ await page.getByLabel('每次候选来源数',{exact:true}).fill('10');
+ await page.getByRole('button',{name:'开始研究',exact:true}).click();
+ await page.waitForURL(/\/task\/\?id=[a-f0-9]{32}/);
+ const id=new URL(page.url()).searchParams.get('id');assert(id);
+ console.log(JSON.stringify({task_id:id,status:'created_through_browser'}));
+ await page.locator('.event-list li').first().waitFor();
+ assert(sse,'Browser must receive actual event-stream response');
+ const running=await get('/api/research/'+id);assert(!terminal.has(running.status),'Expected a running task for queued cancellation check');
+ const cancelPage=await context.newPage();await cancelPage.goto('http://127.0.0.1:8000/');
+ await cancelPage.getByText('研究服务在线',{exact:true}).waitFor();
+ await cancelPage.getByLabel('研究问题',{exact:true}).fill('取消功能验证：排队任务不应调用模型。');
+ await cancelPage.getByRole('button',{name:'开始研究',exact:true}).click();
+ await cancelPage.waitForURL(/\/task\/\?id=[a-f0-9]{32}/);
+ const cancelId=new URL(cancelPage.url()).searchParams.get('id');assert(cancelId);
+ await cancelPage.getByRole('button',{name:'取消研究',exact:true}).click();
+ await cancelPage.getByRole('button',{name:'正在取消…',exact:true}).waitFor();
+ await page.getByRole('heading',{name:'DeepDive 研究报告',exact:true}).waitFor({timeout:210000});
+ await page.reload();await page.getByRole('heading',{name:'DeepDive 研究报告',exact:true}).waitFor();
+ const task=await get('/api/research/'+id);const material=await get('/api/research/'+id+'/evidence');
+ assert.equal(task.status,'COMPLETED');
+ const valid=material.sources.filter(source=>source.fetch_status==='FETCHED').length;assert(valid>0);
+ const rendered=await page.locator('.task-metrics>div').first().locator('strong').innerText();assert.equal(Number.parseInt(rendered,10),valid);
+ const downloaded=page.waitForEvent('download');await page.getByRole('link',{name:/下载 Markdown/}).first().click();
+ const download=await downloaded;await download.saveAs(folder+'/report-'+id+'.md');
+ await page.screenshot({path:folder+'/report.png'});
+ await page.getByRole('tab',{name:'研究进展',exact:true}).click();await page.locator('.event-list li').first().waitFor();
+ await page.screenshot({path:folder+'/progress.png'});
+ const until=Date.now()+20000;let cancelled;
+ while(Date.now()<until){cancelled=await get('/api/research/'+cancelId);if(cancelled.status==='CANCELLED')break;await new Promise(resolve=>setTimeout(resolve,300));}
+ assert.equal(cancelled.status,'CANCELLED');assert.equal(cancelled.usage.model_call_attempts,0);
+ await cancelPage.reload();await cancelPage.locator('.task-heading-meta .badge').filter({hasText:'已取消'}).waitFor();
+ await page.goto('http://127.0.0.1:8000/history/');
+ await page.getByRole('button',{name:'已完成',exact:true}).click();await page.locator('a[href="/task/?id='+id+'"]').waitFor();
+ await page.getByRole('button',{name:'已停止',exact:true}).click();await page.locator('a[href="/task/?id='+cancelId+'"]').waitFor();
+ assert.deepEqual(browserErrors,[]);
+ const result={task_id:id,cancelled_task_id:cancelId,status:task.status,valid_sources:valid,claims:material.claims.length,evidence:material.evidence.length,
+   real_sse:true,refresh_restored:true,download_verified:true,cancelled_model_calls:0,history_filters:true,browser_errors:browserErrors,usage:task.usage};
+ await writeFile(folder+'/result.json',JSON.stringify(result,null,2));console.log(JSON.stringify(result));
+}finally{await browser.close();}

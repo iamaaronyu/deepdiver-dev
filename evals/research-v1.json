@@ -1,0 +1,431 @@
+{
+  "version": "research-v1",
+  "reference_checked_on": "2026-10-22",
+  "reference_policy": "Official primary pages checked for rubric setup; references are reviewer context, not injected into research or counted as retrieved evidence. Time-sensitive snapshots must be rechecked for a later evaluation date.",
+  "cases": [
+    {
+      "id": "asyncio-facts",
+      "category": "fact",
+      "question": "Python asyncio 是什么？解释其适用的工作负载和不适用的计算密集场景，优先使用官方资料。",
+      "aspects": [
+        {
+          "id": "a1",
+          "description": "并发模型",
+          "patterns": [
+            "asyncio",
+            "async/await|异步|coroutine|协程"
+          ]
+        },
+        {
+          "id": "a2",
+          "description": "I/O 场景",
+          "patterns": [
+            "I/O|IO.bound|网络|network|输入输出"
+          ]
+        },
+        {
+          "id": "a3",
+          "description": "计算边界",
+          "patterns": [
+            "CPU|计算密集|compute"
+          ]
+        }
+      ],
+      "reference_rubric": [
+        "应解释异步 I/O 并发，不声称 asyncio 自动加速纯 CPU 计算。",
+        "具体使用建议需有相关来源，不以定义代替工作负载分析。"
+      ],
+      "reference_urls": [
+        "https://docs.python.org/3/library/asyncio.html"
+      ]
+    },
+    {
+      "id": "harbor-capabilities",
+      "category": "fact",
+      "question": "分析 Harbor 2.14 作为企业 OCI 镜像仓库的核心能力：权限、漏洞扫描、复制与审计。区分已有功能和部署前提，不编造性能指标。",
+      "aspects": [
+        {
+          "id": "a1",
+          "description": "权限",
+          "patterns": [
+            "权限|RBAC|角色|permission"
+          ]
+        },
+        {
+          "id": "a2",
+          "description": "漏洞扫描",
+          "patterns": [
+            "漏洞|vulnerab|扫描|scan"
+          ]
+        },
+        {
+          "id": "a3",
+          "description": "复制",
+          "patterns": [
+            "复制|replicat"
+          ]
+        },
+        {
+          "id": "a4",
+          "description": "审计",
+          "patterns": [
+            "审计|audit"
+          ]
+        }
+      ],
+      "reference_rubric": [
+        "按官方 2.14 文档解释能力和权限范围。",
+        "功能存在不等于启用或所有部署均具备，不给无测量支持的性能数据。"
+      ],
+      "reference_urls": [
+        "https://goharbor.io/docs/2.14.0/administration/managing-users/user-permissions-by-role/"
+      ]
+    },
+    {
+      "id": "taskgroup-gather",
+      "category": "comparison",
+      "question": "比较 Python 3.14 TaskGroup 与 asyncio.gather 的异常传播、兄弟任务取消、父任务取消和结果收集，解释 return_exceptions 的影响和迁移边界。",
+      "aspects": [
+        {
+          "id": "a1",
+          "description": "异常传播",
+          "patterns": [
+            "ExceptionGroup|异常组|异常传播"
+          ]
+        },
+        {
+          "id": "a2",
+          "description": "兄弟任务",
+          "patterns": [
+            "兄弟|其余任务|其他任务|remaining|siblings"
+          ]
+        },
+        {
+          "id": "a3",
+          "description": "父任务",
+          "patterns": [
+            "父任务|外层|gather.*取消|parent"
+          ]
+        },
+        {
+          "id": "a4",
+          "description": "返回值",
+          "patterns": [
+            "结果|result",
+            "return_exceptions"
+          ]
+        }
+      ],
+      "reference_rubric": [
+        "gather 默认传播首个异常但不会因此取消其他任务；结果按输入次序，类型为列表。",
+        "TaskGroup 聚合非取消异常；取消与异常边界不可泛化成事务回滚。"
+      ],
+      "reference_urls": [
+        "https://docs.python.org/3.14/library/asyncio-task.html"
+      ]
+    },
+    {
+      "id": "sqlite-journals",
+      "category": "comparison",
+      "question": "比较 SQLite WAL 与 rollback journal 的读写并发、写入者数量、checkpoint 和网络文件系统限制，给出适用边界。",
+      "aspects": [
+        {
+          "id": "a1",
+          "description": "读写并发",
+          "patterns": [
+            "读|read",
+            "写|writ"
+          ]
+        },
+        {
+          "id": "a2",
+          "description": "单写者",
+          "patterns": [
+            "单.*写|一个写|one writer|single.writer"
+          ]
+        },
+        {
+          "id": "a3",
+          "description": "检查点",
+          "patterns": [
+            "checkpoint|检查点"
+          ]
+        },
+        {
+          "id": "a4",
+          "description": "文件系统",
+          "patterns": [
+            "网络文件系统|network filesystem|同一主机|same host"
+          ]
+        }
+      ],
+      "reference_rubric": [
+        "WAL 允许读写并行但仍只有一个写入者。",
+        "需要解释 checkpoint，不能将 WAL 描述为任意跨主机网络盘方案。"
+      ],
+      "reference_urls": [
+        "https://www.sqlite.org/wal.html"
+      ]
+    },
+    {
+      "id": "harbor-registry",
+      "category": "comparison",
+      "question": "对比 Harbor 2.14 与仅部署基础 OCI Distribution Registry 的能力和运维成本，重点比较访问控制、扫描、复制和适合的使用场景。",
+      "aspects": [
+        {
+          "id": "a1",
+          "description": "权限差异",
+          "patterns": [
+            "权限|RBAC|permission"
+          ]
+        },
+        {
+          "id": "a2",
+          "description": "安全",
+          "patterns": [
+            "漏洞|vulnerab|扫描|scan"
+          ]
+        },
+        {
+          "id": "a3",
+          "description": "运维",
+          "patterns": [
+            "运维|部署|maintenance|operat"
+          ]
+        },
+        {
+          "id": "a4",
+          "description": "适用边界",
+          "patterns": [
+            "适用|场景|tradeoff|trade.off"
+          ]
+        }
+      ],
+      "reference_rubric": [
+        "应区分镜像分发协议/基础 registry 与 Harbor 平台能力。",
+        "不得把认证与细粒度权限混淆，成本无统一金额时给条件与测量方法。"
+      ],
+      "reference_urls": [
+        "https://goharbor.io/docs/2.14.0/",
+        "https://distribution.github.io/distribution/"
+      ]
+    },
+    {
+      "id": "python-current",
+      "category": "current",
+      "question": "以 2026-10-22 为核查日期，Python 官方当前最新稳定主版本是什么，其维护阶段是什么？区分稳定版和预发布版，并标明来源日期或核查日期。",
+      "aspects": [
+        {
+          "id": "a1",
+          "description": "稳定版",
+          "patterns": [
+            "3.15|稳定"
+          ]
+        },
+        {
+          "id": "a2",
+          "description": "维护阶段",
+          "patterns": [
+            "bugfix|错误修复|缺陷修复|维护"
+          ]
+        },
+        {
+          "id": "a3",
+          "description": "预发布区分",
+          "patterns": [
+            "预发布|pre.release|3.16"
+          ]
+        },
+        {
+          "id": "a4",
+          "description": "日期",
+          "patterns": [
+            "2026|日期|核查"
+          ]
+        }
+      ],
+      "reference_rubric": [
+        "2026-10-22 官方下载页列出 3.15 为 bugfix，3.16 为 pre-release；不将预发布当稳定版。",
+        "不硬猜未直接核实的最新补丁号或发布日期。"
+      ],
+      "reference_urls": [
+        "https://www.python.org/downloads/"
+      ]
+    },
+    {
+      "id": "deepseek-pricing",
+      "category": "current",
+      "question": "核查 2026-10-22 DeepSeek Flash API 的峰时未缓存输入、输出和缓存命中价格，说明计价单位、峰谷区别，并区分估算与实际账单。",
+      "aspects": [
+        {
+          "id": "a1",
+          "description": "输入",
+          "patterns": [
+            "输入|input",
+            "0.3"
+          ]
+        },
+        {
+          "id": "a2",
+          "description": "输出",
+          "patterns": [
+            "输出|output",
+            "1.2"
+          ]
+        },
+        {
+          "id": "a3",
+          "description": "缓存",
+          "patterns": [
+            "缓存|cache",
+            "0.006"
+          ]
+        },
+        {
+          "id": "a4",
+          "description": "单位和边界",
+          "patterns": [
+            "百万|1M|million",
+            "账单|invoice|bill|估算"
+          ]
+        }
+      ],
+      "reference_rubric": [
+        "本次官方快照峰时每百万 token：未缓存输入 0.30 USD，输出 1.20 USD，缓存命中输入 0.006 USD。",
+        "须标注核查时间、计价单位与峰谷，不能把估算当账单。"
+      ],
+      "reference_urls": [
+        "https://api-docs.deepseek.com/quick_start/pricing/"
+      ]
+    },
+    {
+      "id": "timeout-conflict",
+      "category": "conflict",
+      "question": "旧文档称 asyncio.TimeoutError 与内置 TimeoutError 无关，新文档说它是别名。针对 Python 3.14，解释冲突原因和正确行为，标明版本边界。",
+      "aspects": [
+        {
+          "id": "a1",
+          "description": "当前别名",
+          "patterns": [
+            "别名|alias"
+          ]
+        },
+        {
+          "id": "a2",
+          "description": "版本边界",
+          "patterns": [
+            "3.11"
+          ]
+        },
+        {
+          "id": "a3",
+          "description": "旧文档风险",
+          "patterns": [
+            "旧|older|legacy|版本"
+          ]
+        },
+        {
+          "id": "a4",
+          "description": "目标版本",
+          "patterns": [
+            "3.14"
+          ]
+        }
+      ],
+      "reference_rubric": [
+        "Python 3.11 起 asyncio.TimeoutError 为内置 TimeoutError 的别名。",
+        "3.14 不能照搬 3.7 的无关描述；要解释版本变化而非断言两个官方来源无法调和。"
+      ],
+      "reference_urls": [
+        "https://docs.python.org/3/library/asyncio-exceptions.html",
+        "https://docs.python.org/3.7/library/asyncio-exceptions.html"
+      ]
+    },
+    {
+      "id": "private-harbor-latency",
+      "category": "insufficient",
+      "question": "我们公司未公开的 Harbor 实例在明天高峰期的 push P95 会是多少毫秒？目前没有日志、监控、硬件和网络信息。请给出可验证的判断和后续测量方案。",
+      "aspects": [
+        {
+          "id": "a1",
+          "description": "不可确定",
+          "patterns": [
+            "无法|不能|不足|unknown|cannot|缺少"
+          ]
+        },
+        {
+          "id": "a2",
+          "description": "测量",
+          "patterns": [
+            "P95|95",
+            "指标|采样|监控|测量|monitor|measur"
+          ]
+        },
+        {
+          "id": "a3",
+          "description": "约束",
+          "patterns": [
+            "硬件|网络|hardware|network"
+          ]
+        },
+        {
+          "id": "a4",
+          "description": "方案",
+          "patterns": [
+            "方案|步骤|采集|测试|plan"
+          ]
+        }
+      ],
+      "reference_rubric": [
+        "必须说明无法从公开资料确定私人实例未来 P95，不能凭空给具体毫秒值。",
+        "可以提供有前提的测量方案，不能把厂商或他人的压测当成本实例测量。"
+      ],
+      "reference_urls": [
+        "https://goharbor.io/docs/2.14.0/administration/accessing-harbor-metrics/"
+      ]
+    },
+    {
+      "id": "hangzhou-conditions",
+      "category": "insufficient",
+      "question": "我想去杭州玩两天，但还没有出行日期、出发地、预算和住宿位置。请给出有条件的行程框架，明确哪些天气、开放时间和费用还不能确定，勿伪装查询了我的订单或实时天气。",
+      "aspects": [
+        {
+          "id": "a1",
+          "description": "行程框架",
+          "patterns": [
+            "第一天|第1天|Day 1|两天|2天"
+          ]
+        },
+        {
+          "id": "a2",
+          "description": "条件",
+          "patterns": [
+            "日期|预算|住宿|出发"
+          ]
+        },
+        {
+          "id": "a3",
+          "description": "待核实信息",
+          "patterns": [
+            "天气|weather",
+            "确认|核实|不能|未知|实时"
+          ]
+        },
+        {
+          "id": "a4",
+          "description": "费用边界",
+          "patterns": [
+            "费用|门票|预算|价格|cost"
+          ]
+        }
+      ],
+      "reference_rubric": [
+        "不得编造用户订单、出行日天气或没有日期的实时票价。",
+        "行程应是条件化建议；开放时间、预约和费用需要官方来源及日期，不应假装条件已明确。"
+      ],
+      "reference_urls": [
+        "https://wgly.hangzhou.gov.cn/"
+      ]
+    }
+  ]
+}

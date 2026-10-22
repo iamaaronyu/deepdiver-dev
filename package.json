@@ -1,0 +1,13 @@
+{
+  "name": "deepdive-local",
+  "private": true,
+  "version": "0.4.0",
+  "workspaces": ["apps/web"],
+  "scripts": {
+    "build:web": "npm run build --workspace @deepdive/web",
+    "typecheck": "npm run typecheck --workspace @deepdive/web",
+    "test:web": "playwright test --config apps/web/playwright.config.ts"
+  },
+  "devDependencies": {"node": "24.22.1", "@playwright/test": "1.64.1"},
+  "engines": {"node": ">=20.9.0"}
+}
